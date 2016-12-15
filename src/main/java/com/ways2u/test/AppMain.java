@@ -5,6 +5,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ways2u.config.ConfigModule;
 import com.ways2u.net.*;
+import com.ways2u.test.validate.IValidator;
+import com.ways2u.test.validate.ValidatorUtil;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -32,6 +34,8 @@ public class AppMain {
     @Inject
     Gson gson;
 
+    PostJsonService poxyPostJsonService;
+
     public AppMain() {
         NetComponent netComponent = DaggerNetComponent.builder()
                 .configModule(new ConfigModule())
@@ -42,6 +46,8 @@ public class AppMain {
                 .appModule(new AppModule())
                 .build()
                 .inject(this);
+
+        poxyPostJsonService = ValidatorUtil.createTimeTestProxy(PostJsonService.class,postJsonService);
     }
 
     public void testGetData() {
@@ -60,7 +66,9 @@ public class AppMain {
 
     public void testGetDatas() {
         Map<String, String> params = new HashMap<String, String>();
-        Call<JsonElement> call = retrofitService.getData("persons.do", params);
+        params.put("token", "2df0416ca60ac960443b9b815e71febf");
+        params.put("re_order_no", "R161202341509744");
+        Call<JsonElement> call = retrofitService.getData("http://testpanda.huodao.hk/api/account/huishou_order/express_list", params);
         call.enqueue(new Callback<JsonElement>() {
             public void onResponse(Call<JsonElement> call, Response<JsonElement> response) {
                 System.out.println(response.body());
@@ -73,19 +81,36 @@ public class AppMain {
     }
 
     public void testPostData() { //not json error
-        Map<String, String> params = new HashMap<String, String>();
+        final Map<String, String> params = new HashMap<String, String>();
         params.put("o", "1");
+
+        final String functionName = ValidatorUtil.getFunctionName();
+
         Call<JsonElement> call = retrofitService.postData("json.do", params);
+
         call.enqueue(new Callback<JsonElement>() {
             public void onResponse(Call<JsonElement> call, Response<JsonElement> response) {
                 System.out.println(response.body());
+                boolean ok = ValidatorUtil.validate(params, response.body(), new IValidator<Map<String, String>, JsonElement>() {
+                    @Override
+                    public boolean validate(Map<String, String> stringStringMap, JsonElement jsonElement) {
+                        return false;
+                    }
+                });
+                if(ok){
+                    System.out.println(functionName+" 成功");
+                }else {
+                    System.err.println(functionName+" 失败");
+                }
             }
 
             public void onFailure(Call<JsonElement> call, Throwable throwable) {
-                System.out.println(throwable.getLocalizedMessage());
+                System.err.println(functionName+" 失败\n\r\t"+throwable.getMessage()+"\n");
             }
         });
     }
+
+
 
     public void testGetMeizi() {
         Observable<Meizi> observable = gankApi.latest(10, 1);
@@ -98,6 +123,7 @@ public class AppMain {
                     }
 
                     public void onNext(Meizi meizi) {
+
                         //new Gson().toJson(meizi)
                         System.out.println(meizi.getClass());
                     }
@@ -111,6 +137,9 @@ public class AppMain {
                     }
                 });
     }
+
+
+
 
     public void testPostJson1() {
         Map<String, String> params = new HashMap<String, String>();
@@ -202,7 +231,7 @@ public class AppMain {
         respone.header.msg="ok";
         respone.body = new Person();
 
-        Call<MyRespone<Person>> call = postJsonService.postJson5(respone);
+        Call<MyRespone<Person>> call = poxyPostJsonService.postJson5(respone);
         call.enqueue(new Callback<MyRespone<Person>>() {
             public void onResponse(Call<MyRespone<Person>> call, Response<MyRespone<Person>> response) {
                 System.out.println(response.body().getClass());
@@ -218,16 +247,51 @@ public class AppMain {
     }
 
 
+
+    public void testGetData2( ) { //not json error
+        final Map<String, String> params = new HashMap<String, String>();
+        params.put("o", "1");
+
+        final String functionName = ValidatorUtil.getFunctionName();
+
+        Call<JsonElement> call = retrofitService.getData("persons.do", params);
+
+        call.enqueue(new Callback<JsonElement>() {
+            public void onResponse(Call<JsonElement> call, Response<JsonElement> response) {
+                //System.out.println(response.body());
+                boolean ok = ValidatorUtil.validate(params, response.body(), new IValidator<Map<String, String>, JsonElement>() {
+                    @Override
+                    public boolean validate(Map<String, String> stringStringMap, JsonElement jsonElement) {
+                        return true;
+                    }
+                });
+                if(ok){
+                    System.out.println(functionName+" 成功");
+                }else {
+                    System.err.println(functionName+" 失败");
+                }
+            }
+
+            public void onFailure(Call<JsonElement> call, Throwable throwable) {
+                System.err.println(functionName+" 失败\n\r\t"+throwable.getMessage()+"\n");
+            }
+        });
+    }
+
+
+
     public static void main(String[] agvs) {
         AppMain appMain = new AppMain();
+        //appMain.testGetMeizi();
         //appMain.testGetData();
+        //appMain.testGetData2();
         //appMain.testGetDatas();
         //appMain.testPostJson1();
         //appMain.testPostJson2();
         //appMain.testPostJson3();
         //appMain.testPostJson4();
-        appMain.testGetPersion();
-        //appMain.testPostJson5();
+        //appMain.testGetPersion();
+        appMain.testPostJson5();
 
         try {
             Thread.sleep(3000);

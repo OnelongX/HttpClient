@@ -8,7 +8,7 @@ import retrofit2.http.Path;
 
 public interface GankApi {
 
-    @GET("data/%E7%A6%8F%E5%88%A9/{count}/{page}")
+    @GET("http://gank.io/api/data/%E7%A6%8F%E5%88%A9/{count}/{page}")
     Observable<Meizi> latest(@Path("count") int count, @Path("page") int page);
     //多个Api
 }

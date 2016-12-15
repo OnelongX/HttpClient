@@ -28,14 +28,14 @@ public class ConfigModule {
     @Provides
     @Named("debug")
     public boolean provideDebug(){
-        return true;
+        return false;
     }
 
     @Reusable
     @Provides
     @Named("networkInterceptor")
     public boolean provideOpenNetworkInterceptor(){
-        return true;
+        return false;
     }
 
 
