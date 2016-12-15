@@ -21,5 +21,4 @@ public interface AppComponent{
     AppContext getContext();
     void inject(AppMain appMain);
 
-    void inject(MyTest myTest);
 }
